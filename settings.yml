@@ -1,0 +1,36 @@
+monitor:
+  name: 7T
+  width: 69  # width of monitor (in cm)
+  distance: 225  # distance of participant from monitor (in cm)
+  gamma: 1  # specific value for gamma correction
+  verbose: True
+
+window:
+  units: pix
+  color: [-0.5, -0.5, -0.5]
+
+eyetracker:
+  address: '100.1.1.1'
+  dot_size: 0.1  # in deg
+  options:
+    calibration_type: HV5
+
+stimuli:
+  movie_files: ['Pre_20140821_version/7T_MOVIE1_CC1.mp4', 'Pre_20140821_version/7T_MOVIE2_CC2.mp4', 'Pre_20140821_version/7T_MOVIE3_HO1.mp4', 'Pre_20140821_version/7T_MOVIE4_HO2.mp4', 'Post_20140821_version/7T_MOVIE1_CC1_v2.mp4', 'Post_20140821_version/7T_MOVIE2_CC2_v2.mp4', 'Post_20140821_version/7T_MOVIE3_HO1_v2.mp4', 'Post_20140821_version/7T_MOVIE4_HO2_v2.mp4']
+  aperture_radius: 400
+  fix_radius: 6
+  fix_color: [1, 1, 1]
+  fix_line_width: 0.25
+
+design:
+  n_trials: 1
+  start_duration: 24
+  end_duration: 24
+  fix_movie_interval: 1.0
+
+various:
+  piechart_width: 1 
+  text_width: 14
+  text_height: 22.5
+  buttons: ['j', 'k', 'l', 'semicolon']
+  button_size: 2  
