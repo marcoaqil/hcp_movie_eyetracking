@@ -48,7 +48,7 @@ class HCPMovieELSession(PylinkEyetrackerSession):
         self.movie = os.path.join(os.path.abspath(os.getcwd()), 'movs', self.settings['stimuli'].get('movie_files')[self.which_movie])
         self.movie_duration = get_movie_length(self.movie)
         print(f'movie duration for this run: {self.movie_duration}')
-        self.movie_stim = MovieStim3(self.win, filename=self.movie, size=self.win.size)
+        self.movie_stim = MovieStim3(self.win, filename=self.movie, size=self.settings['stimuli'].get('movie_size_pix'))
 
     def create_trials(self):
         """ Creates trials (ideally before running your session!) """

@@ -34,7 +34,7 @@ else:
     logging.warn("Using NO eyetracker")
 
 
-output_str = f'sub-{subject}_run-{run}_task-LR'
+output_str = f'sub-{subject}_run-{run}_task-movie'
 settings_fn = op.join(op.dirname(__file__), 'settings.yml')
 
 session_object = HCPMovieELSession(output_str=output_str,
