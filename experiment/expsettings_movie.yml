@@ -1,0 +1,54 @@
+preferences:
+    general:
+        audioLib: SoundDevice
+        units: deg
+
+window:
+    size: [1920, 1080]
+    screen: 1
+    pos: [0, 0]
+    color: [0, 0, 0]
+    fullscr: True
+    winType: pyglet
+    waitBlanking: True
+
+monitor:
+    name: default
+    width: 69.8  # in cm
+    distance: 196  # in cm
+    gamma: 1
+
+operating_system: linux # specify the OS the code is run on as 'mac', 'linux', or 'windows'
+
+mouse:
+    visible: False
+
+scanner:
+    mri_trigger: t
+
+eyetracker:
+    model: eyelink
+    address: '100.1.1.1'
+    dot_size: 0.1
+    options:
+        binocular_enabled: NO
+        calibration_type: HV5
+        sample_rate: 1000
+        calibration_area_proportion: 0.4 0.4
+        validation_area_proportion: 0.4 0.4
+
+stimuli:
+    movie_file: 'combined_norest.mov'
+    movie_size_pix: [1024,720]
+
+design:
+    start_duration: 26.4    #make sure duration of scan is consistent. number of TRs should be = (start_duration+movie_length+end_duration-approx_topup_duration)/TR
+    end_duration: 69.54 #this sthould ttttttttgive 55 seconds of time for the topup with a scan duration of 255 TRstttttttttt
+
+various:
+    piechart_width: 1 
+    text_width: 150
+    text_height: 0.5
+    txt_y_pos: 2.5
+    buttons: ['j', 'k', 'l', 'semicolon']
+    button_size: 2  
