@@ -4,9 +4,11 @@ import subprocess, os
 
 from exptools2.core import Session, PylinkEyetrackerSession
 from stimuli import FixationLines
-from trial import HCPMovieELTrial, InstructionTrial, DummyWaiterTrial, OutroTrial
-from psychopy.visual import ImageStim, MovieStim3
-
+from trial import HCPMovieELTrial, DummyWaiterTrial, OutroTrial
+from psychopy.visual import ImageStim, MovieStim3, Circle, Line
+from psychopy import tools
+import yaml
+opj = os.path.join
 
 def get_movie_length(filename):
     result = subprocess.run(["ffprobe", "-v", "error", "-show_entries",
@@ -18,7 +20,7 @@ def get_movie_length(filename):
 
 
 class HCPMovieELSession(PylinkEyetrackerSession):
-    def __init__(self, output_str, output_dir, settings_file, eyetracker_on=True, which_movie=0):
+    def __init__(self, output_str, output_dir, settings_file, eyetracker_on=True):
         """ Initializes StroopSession object. 
       
         Parameters
@@ -32,67 +34,87 @@ class HCPMovieELSession(PylinkEyetrackerSession):
             default settings file (in data/default_settings.yml)
         """
         super().__init__(output_str, output_dir=output_dir, settings_file=settings_file, eyetracker_on=eyetracker_on)  # initialize parent class!
-        self.n_trials = self.settings['design'].get('n_trials')  
-        self.which_movie = int(which_movie)
+        
 
-        self.fixation = FixationLines(win=self.win, 
-                                    circle_radius=self.settings['stimuli'].get('aperture_radius')*2,
-                                    color=(1, -1, -1), 
-                                    line_width=self.settings['stimuli'].get('fix_line_width'))
+        self.mri_trigger = self.settings['scanner']['mri_trigger']
 
-        self.report_fixation = FixationLines(win=self.win, 
-                                    circle_radius=self.settings['stimuli'].get('fix_radius')*2,
-                                    color=self.settings['stimuli'].get('fix_color'), 
-                                    line_width=self.settings['stimuli'].get('fix_line_width'))
 
-        self.movie = os.path.join(os.path.abspath(os.getcwd()), 'movs', self.settings['stimuli'].get('movie_files')[self.which_movie])
+        self.movie = os.path.join(os.path.abspath(os.getcwd()), 'movs', self.settings['stimuli']['movie_file'])
         self.movie_duration = get_movie_length(self.movie)
+
         print(f'movie duration for this run: {self.movie_duration}')
-        self.movie_stim = MovieStim3(self.win, filename=self.movie, size=self.settings['stimuli'].get('movie_size_pix'))
+
+        self.movie_stim = MovieStim3(self.win, filename=self.movie, size=self.settings['stimuli']['movie_size_pix'], pos=[0,-100])
+
+        self.fixation_disk = Circle(
+            self.win, 
+            units='deg', 
+            radius=0.05,
+            lineWidth = 3, 
+            fillColor=[1,1,1], 
+            lineColor=[-1,-1,-1],
+            pos=[0,-tools.monitorunittools.pix2deg(100, self.monitor)])
+        
+        # movie_ext_pix_x = (-self.settings['stimuli']['movie_size_pix'][0]/2,self.settings['stimuli']['movie_size_pix'][0]/2)
+        # movie_ext_pix_y = (-self.settings['stimuli']['movie_size_pix'][1]/2-100,self.settings['stimuli']['movie_size_pix'][1]/2-100)
+       
+
+        # self.line_1 = Line(self.win, start=(movie_ext_pix_x[0], movie_ext_pix_y[0]), units='pix',
+        #                   end=(movie_ext_pix_x[1], movie_ext_pix_y[1]), lineColor=[-1,-1,-1], lineWidth=1)
+        # self.line_2 = Line(self.win, start=(movie_ext_pix_x[0], movie_ext_pix_y[1]), units='pix',
+        #                   end=(movie_ext_pix_x[1], movie_ext_pix_y[0]), lineColor=[-1,-1,-1], lineWidth=1)
+
+        self.create_trials()
 
     def create_trials(self):
         """ Creates trials (ideally before running your session!) """
 
-        instruction_trial = InstructionTrial(session=self, 
+        dummy_trial = DummyWaiterTrial(session=self, 
                                             trial_nr=0, 
                                             phase_durations=[np.inf],
-                                            txt='Please keep fixating at the center.', 
-                                            keys=['space'])
-
-        dummy_trial = DummyWaiterTrial(session=self, 
-                                            trial_nr=1, 
-                                            phase_durations=[np.inf, self.settings['design'].get('start_duration')],
-                                            txt='Waiting for experiment to start')
+                                            txt="Waiting for scanner; please remain still and maintain fixation.")
 
         outro_trial = OutroTrial(session=self, 
-                                            trial_nr=self.n_trials+2, 
-                                            phase_durations=[self.settings['design'].get('end_duration')],
-                                            txt='')
+                                            trial_nr=3, 
+                                            phase_durations=[self.settings['design']['end_duration']]
+                                            )#txt='Scan still in progress; please remain still and maintain fixation.'
+        
+        intro_trial = OutroTrial(session=self, 
+                                            trial_nr=1, 
+                                            phase_durations=[self.settings['design']['start_duration']])
 
         movie_trial = HCPMovieELTrial(self, 
-                                        trial_nr=0, 
-                                        phase_durations=[self.settings['design'].get('fix_movie_interval'), self.movie_duration, self.settings['design'].get('fix_movie_interval')], 
-                                        phase_names=['fix_pre', 'movie', 'fix_post'],
-                                        parameters={'movie':self.run, 'movie_duration':self.movie_duration, 'movie_file': self.movie})
+                                        trial_nr=2, 
+                                        phase_durations=[self.movie_duration], 
+                                        phase_names=['movie'],
+                                        parameters={'movie_duration':self.movie_duration, 'movie_file': self.movie})
 
-        self.trials = [instruction_trial, dummy_trial, movie_trial, outro_trial]
+        self.trials = [dummy_trial, intro_trial, movie_trial, outro_trial]
 
-    def create_trial(self):
-        pass
+
 
     def run(self):
-        """ Runs experiment. """   
-        # self.create_trials()  # create them *before* running!
 
         if self.eyetracker_on:
             self.calibrate_eyetracker()
 
-        self.start_experiment()
-
-        if self.eyetracker_on:
             self.start_recording_eyetracker()
+
+        self.start_experiment()
+        
+        self.win.color = [-1,-1,-1]
+
         for trial in self.trials:
             trial.run()
 
-        self.close()
-    
+        self.quit()
+
+
+    def quit(self):
+
+        # write to disk
+        settings_out = opj(self.output_dir, self.output_str + '_expsettings.yml')
+        with open(settings_out, 'w') as f_out:
+            yaml.dump(self.settings, f_out, indent=4, default_flow_style=False)
+            
+        super().quit()

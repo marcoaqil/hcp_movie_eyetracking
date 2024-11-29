@@ -1,7 +1,7 @@
 import numpy as np
 from exptools2.core import Trial
 from psychopy.visual import TextStim
-from stimuli import FixationLines
+from psychopy import event
 
 class HCPMovieELTrial(Trial):
     
@@ -46,82 +46,77 @@ class HCPMovieELTrial(Trial):
     #     super().run()
 
     def draw(self):
-        if self.phase == 1:  
-            self.session.movie_stim.draw()    
+        
+        self.session.movie_stim.draw()
 
-class InstructionTrial(Trial):
-    """ Simple trial with instruction text. """
+        #self.session.line_1.draw()
+        #self.session.line_2.draw()
+        #self.session.fixation_disk.draw() 
 
-    def __init__(self, session, trial_nr, phase_durations=[np.inf],
-                 txt=None, keys=None, **kwargs):
+    def get_events(self):
+        events = event.getKeys(timeStamped=self.session.clock)
+        if events:
+            if 'q' in [ev[0] for ev in events]:  # specific key in settings?
+
+                self.session.quit() 
+
+
+
+
+class DummyWaiterTrial(Trial):
+    """ Simple trial with text (trial x) and fixation. """
+
+    def __init__(self, session, trial_nr, phase_durations,
+                 txt='', **kwargs):
 
         super().__init__(session, trial_nr, phase_durations, **kwargs)
 
-        txt_height = self.session.settings['various'].get('text_height')
-        txt_width = self.session.settings['various'].get('text_width')
-
-        if txt is None:
-            txt = '''Press any button to continue.'''
+        txt_height = self.session.settings['various']['text_height']
+        txt_width = self.session.settings['various']['text_width']
+        txt_y_pos = self.session.settings['various']['txt_y_pos']
 
         self.text = TextStim(self.session.win, txt,
+                             pos=[0,txt_y_pos],
                              height=txt_height, wrapWidth=txt_width, **kwargs)
-
-        self.keys = keys
-
+    
     def draw(self):
-        self.session.fixation.draw()
-        self.session.report_fixation.draw()
-
         self.text.draw()
+        self.session.fixation_disk.draw()
 
     def get_events(self):
-        events = super().get_events()
+        events = event.getKeys(timeStamped=self.session.clock)
+        if events:
+            if 'q' in [ev[0] for ev in events]:  # specific key in settings?
 
-        if self.keys is None:
-            if events:
-                self.stop_phase()
-        else:
+                self.session.quit() 
+
             for key, t in events:
-                if key in self.keys:
+                if key == self.session.mri_trigger:
                     self.stop_phase()
 
 
-class DummyWaiterTrial(InstructionTrial):
-    """ Simple trial with text (trial x) and fixation. """
-
-    def __init__(self, session, trial_nr, phase_durations=None,
-                 txt="Waiting for scanner triggers.", **kwargs):
-
-        super().__init__(session, trial_nr, phase_durations, txt, **kwargs)
-    
-    def draw(self):
-        self.session.fixation.draw()
-        if self.phase == 0:
-            self.text.draw()
-        else:
-            self.session.report_fixation.draw()
-
-    def get_events(self):
-        events = Trial.get_events(self)
-
-        if events:
-            for key, t in events:
-                if key == self.session.mri_trigger:
-                    if self.phase == 0:
-                        self.stop_phase()
-
-class OutroTrial(InstructionTrial):
+class OutroTrial(Trial):
     """ Simple trial with only fixation cross.  """
 
     def __init__(self, session, trial_nr, phase_durations, txt='', **kwargs):
 
-        txt = ''''''
-        super().__init__(session, trial_nr, phase_durations, txt=txt, **kwargs)
+        super().__init__(session, trial_nr, phase_durations, **kwargs)
+
+        txt_height = self.session.settings['various']['text_height']
+        txt_width = self.session.settings['various']['text_width']
+        txt_y_pos = self.session.settings['various']['txt_y_pos']
+
+        self.text = TextStim(self.session.win, txt,
+                             pos=[0,txt_y_pos],
+                             height=txt_height, wrapWidth=txt_width, **kwargs)
+
+    def draw(self):
+        #self.text.draw()
+        self.session.fixation_disk.draw()
 
     def get_events(self):
-        events = Trial.get_events(self)
-
+        events = event.getKeys(timeStamped=self.session.clock)
         if events:
-            for key, t in events:
-                if key == 'space':
-                    self.stop_phase()        
+            if 'q' in [ev[0] for ev in events]:  # specific key in settings?
+
+                self.session.quit() 

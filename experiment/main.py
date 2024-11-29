@@ -1,48 +1,49 @@
-import os.path as op
-import argparse
-import numpy as np
-import scipy.stats as ss
-import pandas as pd
-from psychopy import logging
-from itertools import product
-import yaml
+import sys
+import os
 from session import HCPMovieELSession
+from datetime import datetime
+datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+opj = os.path.join
 
-parser = argparse.ArgumentParser()
-parser.add_argument('subject', default=None, nargs='?')
-parser.add_argument('run', default=None, nargs='?')
-parser.add_argument('eyelink', default=False, nargs='?')
+def main():
+    subject = sys.argv[1]
+    sess =  sys.argv[2]
+    # 5 conditions: PRF2R, PRF1R, PRF1S, PRF4R, PRF4F 
+    #(2 squares Regular speed, 1 square Regular, 1 square Slow, 4 square Regular, 4 square Fast)
+    task = sys.argv[3]
+    #in the full experiment we would do 3 runs
+    run = sys.argv[4]
 
-cmd_args = parser.parse_args()
-subject, run, eyelink = cmd_args.subject, cmd_args.run, cmd_args.eyelink
+    try:
+        eye = sys.argv[5]
+        if int(eye) == 1:
+            eye = True
+        else:
+            eye = False
+    except:
+        eye = False
 
-if subject is None:
-    subject = input('Subject? (999): ')
-    subject = 999 if subject == '' else subject
+    output_str = f"{subject}_{sess}_{task}_{run}"
+    log_dir = os.path.join(os.getcwd(), "logs")
+    if not os.path.exists(log_dir):
+        os.makedirs(log_dir, exist_ok=True)
 
-if run is None:
-    run = input('Run? (None): ')
-    run = 0 if run == '' else run
-elif run == '0':
-    run = 0
+    output_dir = opj(log_dir, f"{output_str}_Logs")
+    
+    #if os.path.exists(output_dir):
+    #    print("Warning: output directory already exists. Renaming to avoid overwriting.")
+    output_dir = output_dir + datetime.now().strftime('%Y%m%d%H%M%S')
+    
+    settings_file = opj(os.getcwd(), f"expsettings_{task[5:]}.yml")
 
-if eyelink:
-    eyetracker_on = True
-    logging.warn("Using eyetracker")
-else:
-    eyetracker_on = False
-    logging.warn("Using NO eyetracker")
+    session_object = HCPMovieELSession(output_str=output_str,
+                            output_dir=output_dir,
+                            settings_file=settings_file, 
+                            eyetracker_on=eye)
 
 
-output_str = f'sub-{subject}_run-{run}_task-movie'
-settings_fn = op.join(op.dirname(__file__), 'settings.yml')
 
-session_object = HCPMovieELSession(output_str=output_str,
-                        output_dir=None,
-                        settings_file=settings_fn, 
-                        eyetracker_on=eyetracker_on,
-                        which_movie=run)
-session_object.create_trials()
-logging.warn(f'Writing results to: {op.join(session_object.output_dir, session_object.output_str)}')
-session_object.run()
-session_object.close()
+    session_object.run()
+
+if __name__ == '__main__':
+    main()
